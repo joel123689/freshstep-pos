@@ -180,6 +180,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "same-origin")
         if extra_headers:
             for name, value in extra_headers.items():
                 self.send_header(name, value)
@@ -326,6 +328,24 @@ class Handler(BaseHTTPRequestHandler):
             sessions.pop(token, None)
             self.send_json(200, {"authenticated": False}, {"Set-Cookie": "session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0"})
             return
+        if path == "/api/change-pin":
+            session = get_session(self)
+            if not session:
+                self.send_json(401, {"error": "Authentication required"})
+                return
+            current_pin = str(data.get("currentPin", "")).strip()
+            new_pin = str(data.get("newPin", "")).strip()
+            if len(new_pin) < 8:
+                self.send_json(400, {"error": "New PIN must contain at least 8 characters"})
+                return
+            with connect_db() as db:
+                user = db.execute("SELECT pin_hash FROM users WHERE name=? AND active=1", (session["name"],)).fetchone()
+                if not user or not verify_pin(current_pin, user["pin_hash"]):
+                    self.send_json(401, {"error": "Current PIN is incorrect"})
+                    return
+                db.execute("UPDATE users SET pin_hash=? WHERE name=?", (hash_pin(new_pin), session["name"]))
+            self.send_json(200, {"changed": True})
+            return
         if path == "/api/orders":
             session = self.require_role(("owner", "admin"))
             if not session:
@@ -375,8 +395,8 @@ class Handler(BaseHTTPRequestHandler):
             name = str(data.get("name", "")).strip()
             phone = str(data.get("phone", "")).strip()
             pin = str(data.get("pin", "")).strip()
-            if not name or not pin:
-                self.send_json(400, {"error": "Worker name and PIN are required"})
+            if not name or len(pin) < 8:
+                self.send_json(400, {"error": "Worker name and an 8-character PIN are required"})
                 return
             with connect_db() as db:
                 db.execute(
@@ -492,6 +512,22 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 db.execute("UPDATE orders SET status=? WHERE id=?", (str(data["status"]), order_id))
             self.send_json(200, {"id": order_id, "status": data["status"]})
+            return
+        self.send_error(404)
+
+    def do_DELETE(self):
+        path = urlparse(self.path).path
+        if path.startswith("/api/workers/"):
+            session = self.require_role(("owner", "admin"))
+            if not session:
+                self.send_json(403, {"error": "Owner or admin access required"})
+                return
+            name = path.rsplit("/", 1)[1]
+            from urllib.parse import unquote
+            name = unquote(name)
+            with connect_db() as db:
+                db.execute("UPDATE users SET active=0 WHERE name=? AND role='worker'", (name,))
+            self.send_json(200, {"name": name, "active": False})
             return
         self.send_error(404)
 

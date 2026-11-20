@@ -476,10 +476,10 @@ function genericPage(title) {
     return `<article class="panel table-panel"><div class="section-heading"><h2>Customers</h2><span class="eyebrow">${customers.length} in demo records</span></div><div class="table-wrap"><table><thead><tr><th>NAME</th><th>PHONE</th><th>ORDERS</th><th>LATEST ORDER</th></tr></thead><tbody>${customers.map(customer=>`<tr><td>${escapeHtml(customer.customer)}</td><td>${escapeHtml(customer.phone || "—")}</td><td>${state.orders.filter(order=>order.phone && order.phone===customer.phone).length || 1}</td><td>${escapeHtml(customer.id)}</td></tr>`).join("")}</tbody></table></div></article>`;
   }
   if (title === "Members") {
-    return `<article class="panel"><div class="team-toolbar"><div><h2 style="margin:0">Workers</h2><p class="eyebrow">Only owners and admins can manage the team</p></div><button class="primary-button" id="addWorkerButton">＋ Add worker</button></div><div class="table-wrap"><table><thead><tr><th>TEAM MEMBER</th><th>PHONE</th><th>ROLE</th><th>ACCESS</th></tr></thead><tbody>
-      ${state.workers.map(worker=>`<tr><td>${escapeHtml(worker.name)}</td><td>${escapeHtml(worker.phone)}</td><td>Worker</td><td>Assigned work · read-only</td></tr>`).join("")}
-      <tr><td>${ownerName}</td><td>—</td><td>Owner</td><td>All business data and settings</td></tr>
-      <tr><td>${adminName}</td><td>—</td><td>Admin</td><td>All business data and settings</td></tr>
+    return `<article class="panel"><div class="team-toolbar"><div><h2 style="margin:0">Workers</h2><p class="eyebrow">Only owners and admins can manage the team</p></div><button class="primary-button" id="addWorkerButton">＋ Add worker</button></div><div class="table-wrap"><table><thead><tr><th>TEAM MEMBER</th><th>PHONE</th><th>ROLE</th><th>ACCESS</th><th>ACTION</th></tr></thead><tbody>
+      ${state.workers.map(worker=>`<tr><td>${escapeHtml(worker.name)}</td><td>${escapeHtml(worker.phone)}</td><td>Worker</td><td>Assigned work · read-only</td><td><button class="table-action" data-deactivate-worker="${escapeHtml(worker.name)}">Deactivate</button></td></tr>`).join("")}
+      <tr><td>${ownerName}</td><td>—</td><td>Owner</td><td>All business data and settings</td><td>Protected account</td></tr>
+      <tr><td>${adminName}</td><td>—</td><td>Admin</td><td>All business data and settings</td><td>Protected account</td></tr>
     </tbody></table></div></article>`;
   }
   if (title === "Attendance") {
@@ -550,6 +550,18 @@ function render() {
   const inventoryAddButton = document.getElementById("inventoryAddButton");
   if (inventoryAddButton) inventoryAddButton.addEventListener("click", () => openInventoryModal());
   document.querySelectorAll("[data-inventory-edit]").forEach(button => button.addEventListener("click", () => openInventoryModal(button.dataset.inventoryEdit)));
+  document.querySelectorAll("[data-deactivate-worker]").forEach(button => button.addEventListener("click", async () => {
+    if (!window.confirm(`Deactivate ${button.dataset.deactivateWorker}?`)) return;
+    try {
+      await apiRequest(`/api/workers/${encodeURIComponent(button.dataset.deactivateWorker)}`, { method: "DELETE", body: "{}" });
+      state.workers = state.workers.filter(worker => worker.name !== button.dataset.deactivateWorker);
+      saveWorkers();
+      render();
+      showToast(`${button.dataset.deactivateWorker} deactivated`);
+    } catch (error) {
+      showToast(error.message);
+    }
+  }));
   const clockInButton = document.getElementById("clockInButton");
   if (clockInButton) clockInButton.addEventListener("click", () => clockIn(state.currentWorker));
 }
@@ -755,6 +767,11 @@ function openWorkerModal() {
 document.querySelectorAll("[data-close-worker-modal]").forEach(button => button.addEventListener("click", () => {
   document.getElementById("workerModal").classList.remove("open");
 }));
+document.querySelectorAll("[data-close-change-pin]").forEach(button => button.addEventListener("click", () => {
+  const modal = document.getElementById("changePinModal");
+  modal.classList.remove("open");
+  modal.setAttribute("aria-hidden", "true");
+}));
 document.querySelectorAll("[data-close-inventory]").forEach(button => button.addEventListener("click", () => {
   const inventoryModal = document.getElementById("inventoryModal");
   inventoryModal.classList.remove("open");
@@ -879,9 +896,6 @@ document.getElementById("workerSignInForm").addEventListener("submit", event => 
   clockIn(workerName);
 });
 document.getElementById("workerSignInSelect").addEventListener("change", () => updateWorkerOptions());
-document.getElementById("profileButton").addEventListener("click", () => {
-  showToast(`Signed in account: ${document.getElementById("profileName").textContent}`);
-});
 
 document.getElementById("todayDate").textContent = new Intl.DateTimeFormat("en-UG",{weekday:"long",month:"long",day:"numeric"}).format(new Date());
 document.getElementById("mobileMenu").addEventListener("click",()=>document.querySelector(".sidebar").classList.toggle("open"));
@@ -1231,6 +1245,34 @@ document.getElementById("workerSignOutButton").addEventListener("click", async (
   }
   state.role = "";
   restoreServerSession();
+});
+
+document.getElementById("changePinForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const data = new FormData(event.target);
+  const newPin = data.get("newPin").trim();
+  const confirmPin = data.get("confirmPin").trim();
+  if (newPin !== confirmPin) {
+    showToast("New PIN entries do not match");
+    return;
+  }
+  try {
+    await apiRequest("/api/change-pin", {
+      method: "POST",
+      body: JSON.stringify({ currentPin: data.get("currentPin").trim(), newPin })
+    });
+    event.target.reset();
+    document.getElementById("changePinModal").classList.remove("open");
+    showToast("PIN changed successfully");
+  } catch (error) {
+    showToast(error.message);
+  }
+});
+
+document.getElementById("profileButton").addEventListener("click", () => {
+  if (!state.role) return;
+  document.getElementById("changePinModal").classList.add("open");
+  document.getElementById("changePinModal").setAttribute("aria-hidden", "false");
 });
 
 restoreServerSession();

@@ -208,11 +208,29 @@
         <form id="workerForm">
           <label>Worker name<input name="name" required placeholder="Full name" /></label>
           <label>Phone number<input name="phone" type="tel" required placeholder="+256..." /></label>
-          <label>Temporary sign-in PIN<input name="pin" type="password" minlength="4" maxlength="32" required placeholder="At least 4 characters" /></label>
+          <label>Temporary sign-in PIN<input name="pin" type="password" minlength="8" maxlength="32" required placeholder="At least 8 characters" /></label>
           <p class="delivery-note">Workers get read-only access to their assigned orders in this demo.</p>
           <div class="modal-footer">
             <button type="button" class="secondary-button" data-close-worker-modal>Cancel</button>
             <button type="submit" class="primary-button">Add worker</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="changePinModal" aria-hidden="true">
+      <div class="modal">
+        <div class="modal-header">
+          <div><p class="eyebrow">Account security</p><h2>Change your PIN</h2></div>
+          <button class="close-button" data-close-change-pin>×</button>
+        </div>
+        <form id="changePinForm">
+          <label>Current PIN<input name="currentPin" type="password" minlength="4" required /></label>
+          <label>New PIN<input name="newPin" type="password" minlength="8" maxlength="32" required /></label>
+          <label>Confirm new PIN<input name="confirmPin" type="password" minlength="8" maxlength="32" required /></label>
+          <div class="modal-footer">
+            <button type="button" class="secondary-button" data-close-change-pin>Cancel</button>
+            <button type="submit" class="primary-button">Change PIN</button>
           </div>
         </form>
       </div>
