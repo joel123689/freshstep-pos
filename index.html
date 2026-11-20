@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FreshStep POS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="modal-backdrop" id="loginModal" aria-hidden="true">
+      <div class="modal login-modal">
+        <div class="modal-header">
+          <div><p class="eyebrow">FreshStep secure workspace</p><h2>Sign in</h2></div>
+        </div>
+        <form id="loginForm">
+          <label>Account name
+            <select name="name" required>
+              <option value="KYEYUNE CHARLES">KYEYUNE CHARLES · Owner</option>
+              <option value="BUKENYA JOEL">BUKENYA JOEL · Admin</option>
+              <option value="NAMUGA HELLEN">NAMUGA HELLEN · Worker</option>
+              <option value="NAMUTEBI ANNET">NAMUTEBI ANNET · Worker</option>
+              <option value="NAKACHWA MIRIAM">NAKACHWA MIRIAM · Worker</option>
+            </select>
+          </label>
+          <label>PIN<input name="pin" type="password" minlength="4" required placeholder="Enter your PIN" /></label>
+          <p class="delivery-note">Use the PIN issued by the owner or administrator. New worker PINs must be assigned before sign-in.</p>
+          <div class="modal-footer"><button type="submit" class="primary-button">Sign in</button></div>
+        </form>
+      </div>
+    </div>
+    <div class="app-shell" id="appShell" hidden>
+      <aside class="sidebar">
+        <div class="brand">
+          <img class="brand-logo" src="freshstep-logo.jpg" alt="FreshStep Laundry, Garment & Shoe Care" />
+          <div><strong>FreshStep</strong><small>Laundry, Garment & Shoe Care</small></div>
+        </div>
+        <nav id="mainNav"></nav>
+        <div class="sidebar-footer">
+          <button class="support-link" id="supportFreshbot"><span>✦</span> FreshBot assistant</button>
+          <button class="secondary-button worker-sign-in" id="workerSignInButton" hidden>Worker sign-in / attendance</button>
+          <button class="secondary-button worker-sign-in" id="workerSignOutButton" hidden>Worker sign out</button>
+          <button class="profile" id="profileButton">
+            <span class="avatar">KC</span>
+            <span><strong id="profileName">KYEYUNE CHARLES</strong><small id="profileRole">Owner</small></span>
+            <span class="dots">•••</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <button class="mobile-menu" id="mobileMenu" aria-label="Open menu">☰</button>
+          <div>
+            <p class="eyebrow" id="todayDate"></p>
+            <h1 id="pageTitle">Good morning, Amina</h1>
+          </div>
+          <div class="top-actions">
+            <button class="icon-button" title="Notifications">♢<span class="notification-dot"></span></button>
+            <button class="primary-button" id="newOrderButton"><span>＋</span> New order</button>
+          </div>
+        </header>
+        <div class="demo-banner"><span>Secure workspace</span> Sign in with your account. Attendance and order changes are stored in the server SQLite database.</div>
+        <section id="content" class="content">
+        </section>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="orderModal" aria-hidden="true">
+      <div class="modal">
+        <div class="modal-header">
+          <div><p class="eyebrow">Point of sale</p><h2 id="orderModalTitle">Create new order</h2></div>
+          <button class="close-button" data-close-modal>×</button>
+        </div>
+        <form id="orderForm">
+          <div class="form-grid">
+            <label>Customer name<input name="customer" required placeholder="Search or add customer" /></label>
+            <label>Phone number<input name="phone" type="tel" required placeholder="+256..." /></label>
+          </div>
+          <div class="order-items-heading"><div><strong>Garments and services</strong><small>Add one line for each item or service.</small></div><button type="button" class="secondary-button" id="addOrderItem">＋ Add item</button></div>
+          <div id="orderItems"></div>
+          <div class="form-grid order-options">
+            <label>Payment status
+              <select name="payment"><option value="Unpaid">Unpaid</option><option value="Cash">Paid — Cash</option><option value="MTN MoMo">Paid — MTN MoMo</option><option value="Airtel Money">Paid — Airtel Money</option><option value="Visa">Paid — Visa</option></select>
+            </label>
+            <label>Pickup / delivery date<input name="due" type="date" required /></label>
+            <label>Assigned worker<select name="assignedTo" id="assignedWorker"></select></label>
+          </div>
+          <div class="addons-grid">
+            <label><input type="checkbox" name="addons" value="softener" /> Fabric softener <span>+ UGX 2,000</span></label>
+            <label><input type="checkbox" name="addons" value="perfume" /> Premium perfume <span>+ UGX 2,000</span></label>
+            <label><input type="checkbox" name="addons" value="packaging" /> Protective packaging <span>+ UGX 3,000</span></label>
+            <label><input type="checkbox" name="addons" value="express" /> Express (6 hours) <span>+ UGX 10,000</span></label>
+            <label><input type="checkbox" name="addons" value="delivery" /> Pickup & delivery <span>UGX 8,000*</span></label>
+          </div>
+          <p class="delivery-note">Pickup & delivery is UGX 8,000 within 5km, free on orders above UGX 50,000 within 5km.</p>
+          <div class="quote-summary"><span>Order total</span><strong id="orderTotal">UGX 15,000</strong></div>
+          <label>Order notes<textarea name="notes" rows="2" placeholder="Anything else the team should know about this order..."></textarea></label>
+          <div class="modal-footer">
+            <button type="button" class="secondary-button" data-close-modal>Cancel</button>
+            <button type="submit" class="primary-button" id="submitOrderButton">Create order</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <template id="orderItemTemplate">
+      <article class="order-item">
+        <div class="order-item-heading"><strong>Item</strong><button type="button" class="remove-order-item">Remove</button></div>
+        <div class="form-grid">
+          <label>Service
+              <select name="service">
+                <optgroup label="Laundry packages (5kg)">
+                  <option value="basic">FreshStep Basic — UGX 15,000</option>
+                  <option value="premium">FreshStep Premium — UGX 20,000</option>
+                  <option value="executive">FreshStep Executive — UGX 25,000</option>
+                </optgroup>
+                <optgroup label="Garment care">
+                  <option value="shirt">Shirt / blouse — UGX 3,000 each</option>
+                  <option value="polo">Polo / T-shirt — UGX 2,500 each</option>
+                  <option value="trouser">Trouser / jeans — UGX 4,000 each</option>
+                  <option value="shorts">Shorts — UGX 2,500 each</option>
+                  <option value="skirt">Skirt — UGX 3,000 each</option>
+                  <option value="dress">Dress — UGX 6,000 each</option>
+                  <option value="jacket">Jacket — UGX 8,000 each</option>
+                  <option value="sweater">Sweater — UGX 5,000 each</option>
+                  <option value="hoodie">Hoodie — UGX 6,000 each</option>
+                  <option value="tie">Tie — UGX 2,000 each</option>
+                </optgroup>
+                <optgroup label="Shoe care">
+                  <option value="shoe-basic">Basic shoe cleaning — UGX 10,000</option>
+                  <option value="shoe-deep">Deep shoe cleaning — UGX 15,000</option>
+                  <option value="luxury">Luxury shoe conditioning — from UGX 35,000</option>
+                  <option value="suit-2">Suit, 2-piece — UGX 20,000</option>
+                  <option value="suit-3">Suit, 3-piece — UGX 25,000</option>
+                </optgroup>
+                <optgroup label="Home & bulky">
+                  <option value="bedsheet-single">Bedsheet, single — UGX 5,000</option>
+                  <option value="bedsheet-double">Bedsheet, double — UGX 8,000</option>
+                  <option value="blanket-single">Blanket, single — UGX 12,000</option>
+                  <option value="blanket-double">Blanket, double — UGX 18,000</option>
+                  <option value="duvet-single">Duvet, single — UGX 20,000</option>
+                  <option value="duvet-double">Duvet, double — UGX 30,000</option>
+                  <option value="duvet-king">King duvet — UGX 35,000</option>
+                  <option value="curtains">Curtains — UGX 10,000</option>
+                  <option value="carpet">Carpet cleaning — UGX 8,000 / m²</option>
+                </optgroup>
+                <optgroup label="Memberships">
+                  <option value="student-plan">Student plan — 4 loads / 20kg — UGX 50,000</option>
+                  <option value="couple-plan">Couple plan — 8 loads / 40kg — UGX 100,000</option>
+                  <option value="family-plan">Family plan — 12 loads / 60kg — UGX 150,000</option>
+                  <option value="business-plan">Business plan — custom pricing</option>
+                </optgroup>
+              </select>
+            </label>
+          <label class="quantity-label"><span class="quantity-caption">Weight (kg)</span><input name="quantity" type="number" min="5" step="0.5" value="5" required /></label>
+          <label class="custom-price-label" hidden>Business plan quote (UGX)<input name="customPrice" type="number" min="1" step="1000" /></label>
+        </div>
+        <div class="form-grid garment-details">
+          <label>Garment color<input name="color" placeholder="e.g. navy blue, white" /></label>
+          <label>Garment description<input name="description" placeholder="Brand, fabric, damage or identifying details" /></label>
+        </div>
+        <div class="care-options">
+          <span>Requested care</span>
+          <label><input type="checkbox" name="care" value="Stain removal" /> Remove stains</label>
+          <label><input type="checkbox" name="care" value="Iron / press" /> Iron / press</label>
+          <label><input type="checkbox" name="care" value="Handle with care" /> Handle with care</label>
+        </div>
+        <label class="photo-upload">Garment photo (optional)
+          <input type="file" name="photo" accept="image/*" capture="environment" />
+          <small>On a phone, choose camera to take a condition photo.</small>
+        </label>
+        <div class="photo-preview" hidden><img alt="Garment condition preview" /><button type="button" class="remove-photo">Remove photo</button></div>
+        <div class="item-total">Item total <strong data-item-total>UGX 15,000</strong></div>
+      </article>
+    </template>
+
+    <div class="modal-backdrop" id="inventoryModal" aria-hidden="true">
+      <div class="modal">
+        <div class="modal-header">
+          <div><p class="eyebrow">Stock control</p><h2 id="inventoryModalTitle">Add inventory item</h2></div>
+          <button class="close-button" data-close-inventory>×</button>
+        </div>
+        <form id="inventoryForm">
+          <input type="hidden" id="inventoryItemId" />
+          <label>Supply name<input name="name" required maxlength="80" placeholder="e.g. Laundry detergent" /></label>
+          <div class="form-grid">
+            <label>On-hand quantity<input name="quantity" type="number" min="0" step="0.1" required /></label>
+            <label>Unit<input name="unit" required maxlength="24" placeholder="bottles, bags, units" /></label>
+            <label>Low-stock alert at<input name="reorderAt" type="number" min="0" step="0.1" required /></label>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="secondary-button" data-close-inventory>Cancel</button>
+            <button type="submit" class="primary-button">Save inventory</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="workerModal" aria-hidden="true">
+      <div class="modal">
+        <div class="modal-header">
+          <div><p class="eyebrow">Team management</p><h2>Add a worker</h2></div>
+          <button class="close-button" data-close-worker-modal>×</button>
+        </div>
+        <form id="workerForm">
+          <label>Worker name<input name="name" required placeholder="Full name" /></label>
+          <label>Phone number<input name="phone" type="tel" required placeholder="+256..." /></label>
+          <label>Temporary sign-in PIN<input name="pin" type="password" minlength="4" maxlength="32" required placeholder="At least 4 characters" /></label>
+          <p class="delivery-note">Workers get read-only access to their assigned orders in this demo.</p>
+          <div class="modal-footer">
+            <button type="button" class="secondary-button" data-close-worker-modal>Cancel</button>
+            <button type="submit" class="primary-button">Add worker</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="workerSignInModal" aria-hidden="true">
+      <div class="modal">
+        <div class="modal-header">
+          <div><p class="eyebrow">Staff attendance</p><h2>Worker sign-in</h2></div>
+          <button class="close-button" data-close-worker-sign-in>×</button>
+        </div>
+        <form id="workerSignInForm">
+          <label>Choose your name<select name="workerName" id="workerSignInSelect" required></select></label>
+          <p class="delivery-note">Your sign-in time is recorded to the second on this device.</p>
+          <div class="role-notice">Face recognition is not active in this demo. Secure face matching requires a dedicated biometric service, worker consent and an alternative sign-in method.</div>
+          <div class="modal-footer">
+            <button type="button" class="secondary-button" data-close-worker-sign-in>Cancel</button>
+            <button type="submit" class="primary-button">Sign in & clock in</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="receiptModal" aria-hidden="true">
+      <div class="modal receipt-modal">
+        <div class="modal-header receipt-actions">
+          <div><p class="eyebrow">Customer receipt</p><h2>Order receipt</h2></div>
+          <div><button class="secondary-button" id="shareReceiptWhatsApp">Share on WhatsApp</button><button class="primary-button" id="printReceipt">Print receipt</button><button class="close-button" data-close-receipt>×</button></div>
+        </div>
+        <div id="receiptContent" class="receipt-paper"></div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="orderDetailsModal" aria-hidden="true">
+      <div class="modal receipt-modal">
+        <div class="modal-header">
+          <div><p class="eyebrow">Garment details</p><h2 id="orderDetailsTitle">Order details</h2></div>
+          <button class="close-button" data-close-details>×</button>
+        </div>
+        <div id="orderDetailsContent"></div>
+      </div>
+    </div>
+
+    <aside class="freshbot-panel" id="freshbotPanel" aria-hidden="true">
+      <div class="bot-header">
+        <div class="bot-title"><span class="bot-icon">✦</span><div><strong>FreshBot</strong><small>Local demo assistant</small></div></div>
+        <button class="close-button" id="closeBot">×</button>
+      </div>
+      <div class="bot-messages" id="botMessages">
+        <div class="bot-message">Hello! I’m FreshBot, a local demo assistant. Ask about saved orders, overdue work, or on-device stock alerts.</div>
+      </div>
+      <div class="bot-prompts">
+        <button data-prompt="How are sales today?">Today’s sales</button>
+        <button data-prompt="Show overdue orders">Overdue orders</button>
+      </div>
+      <form class="bot-input" id="botForm"><input id="botInput" placeholder="Ask FreshBot..." /><button type="submit">➤</button></form>
+    </aside>
+
+    <div class="toast" id="toast"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
