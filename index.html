@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#174ea6" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>FreshStep POS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -59,6 +61,7 @@
           </div>
           <div class="top-actions">
             <button class="icon-button" title="Notifications">♢<span class="notification-dot"></span></button>
+            <a class="secondary-button" href="/download" download title="Download POS source">↓ Download</a>
             <button class="primary-button" id="newOrderButton"><span>＋</span> New order</button>
           </div>
         </header>
@@ -290,6 +293,9 @@
     </aside>
 
     <div class="toast" id="toast"></div>
+    <script>
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+    </script>
     <script src="app.js"></script>
   </body>
 </html>

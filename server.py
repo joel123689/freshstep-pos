@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent
 DATABASE = ROOT / "freshstep.db"
-STATIC_FILES = {"/", "/index.html", "/styles.css", "/app.js", "/freshstep-logo.jpg"}
+STATIC_FILES = {"/", "/index.html", "/styles.css", "/app.js", "/freshstep-logo.jpg", "/manifest.webmanifest", "/sw.js"}
 sessions = {}
 
 
@@ -196,7 +196,14 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404)
             return
         content = file_path.read_bytes()
-        mime = "text/html" if file_path.suffix == ".html" else "text/css" if file_path.suffix == ".css" else "image/jpeg" if file_path.suffix == ".jpg" else "application/javascript"
+        mime = (
+            "text/html" if file_path.suffix == ".html"
+            else "text/css" if file_path.suffix == ".css"
+            else "image/jpeg" if file_path.suffix == ".jpg"
+            else "application/manifest+json" if file_path.suffix == ".webmanifest"
+            else "text/javascript" if file_path.suffix == ".js"
+            else "application/octet-stream"
+        )
         self.send_response(200)
         self.send_header("Content-Type", mime)
         self.send_header("Content-Length", str(len(content)))
@@ -215,6 +222,19 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urlparse(self.path).path
+        if path == "/download":
+            zip_path = ROOT.parent / "FreshStepPOS.zip"
+            if not zip_path.is_file():
+                self.send_error(404)
+                return
+            content = zip_path.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/zip")
+            self.send_header("Content-Disposition", 'attachment; filename="FreshStepPOS.zip"')
+            self.send_header("Content-Length", str(len(content)))
+            self.end_headers()
+            self.wfile.write(content)
+            return
         if path in STATIC_FILES:
             self.send_file(path)
             return

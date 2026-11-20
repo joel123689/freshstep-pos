@@ -1,0 +1,17 @@
+{
+  "name": "FreshStep POS",
+  "short_name": "FreshStep",
+  "description": "Laundry, garment and shoe care POS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8fc",
+  "theme_color": "#174ea6",
+  "icons": [
+    {
+      "src": "/freshstep-logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
