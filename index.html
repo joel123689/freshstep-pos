@@ -209,7 +209,7 @@
           <label>Worker name<input name="name" required placeholder="Full name" /></label>
           <label>Phone number<input name="phone" type="tel" required placeholder="+256..." /></label>
           <label>Temporary sign-in PIN<input name="pin" type="password" minlength="4" maxlength="32" required placeholder="At least 4 characters" /></label>
-          <p class="delivery-note">Workers get read-only access to their assigned orders in this demo.</p>
+          <p class="delivery-note">Workers receive access only to orders assigned to them.</p>
           <div class="modal-footer">
             <button type="button" class="secondary-button" data-close-worker-modal>Cancel</button>
             <button type="submit" class="primary-button">Add worker</button>
@@ -245,7 +245,7 @@
         <form id="workerSignInForm">
           <label>Choose your name<select name="workerName" id="workerSignInSelect" required></select></label>
           <p class="delivery-note">Your sign-in time is recorded to the second on this device.</p>
-          <div class="role-notice">Face recognition is not active in this demo. Secure face matching requires a dedicated biometric service, worker consent and an alternative sign-in method.</div>
+          <div class="role-notice">Face recognition is not active. Secure face matching requires a dedicated biometric service, staff consent and an alternative sign-in method.</div>
           <div class="modal-footer">
             <button type="button" class="secondary-button" data-close-worker-sign-in>Cancel</button>
             <button type="submit" class="primary-button">Sign in & clock in</button>
@@ -276,11 +276,11 @@
 
     <aside class="freshbot-panel" id="freshbotPanel" aria-hidden="true">
       <div class="bot-header">
-        <div class="bot-title"><span class="bot-icon">✦</span><div><strong>FreshBot</strong><small>Local demo assistant</small></div></div>
+        <div class="bot-title"><span class="bot-icon">✦</span><div><strong>FreshBot</strong><small>FreshStep assistant</small></div></div>
         <button class="close-button" id="closeBot">×</button>
       </div>
       <div class="bot-messages" id="botMessages">
-        <div class="bot-message">Hello! I’m FreshBot, a local demo assistant. Ask about saved orders, overdue work, or on-device stock alerts.</div>
+        <div class="bot-message">Hello! I’m FreshBot. Ask about saved orders, overdue work, or stock alerts.</div>
       </div>
       <div class="bot-prompts">
         <button data-prompt="How are sales today?">Today’s sales</button>

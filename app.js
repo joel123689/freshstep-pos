@@ -322,8 +322,8 @@ function statCards() {
   const unpaid = state.orders.filter(order => order.payment === "Unpaid").length;
   return `
     <div class="stats-grid">
-      ${statCard("Order value (demo)", formatUGX(revenue), "From saved sample orders", "UGX")}
-      ${statCard("Orders", String(state.orders.length), "In this demo workspace", "▤")}
+      ${statCard("Order value", formatUGX(revenue), "From saved business orders", "UGX")}
+      ${statCard("Orders", String(state.orders.length), "In this workspace", "▤")}
       ${statCard("Ready for pickup", String(ready), "Awaiting collection", "✓")}
       ${statCard("Unpaid orders", String(unpaid), "Check before handover", "♧")}
     </div>`;
@@ -473,7 +473,7 @@ function genericPage(title) {
   }
   if (title === "Customers") {
     const customers = [...new Map(state.orders.map(order => [order.phone || order.customer, order])).values()];
-    return `<article class="panel table-panel"><div class="section-heading"><h2>Customers</h2><span class="eyebrow">${customers.length} in demo records</span></div><div class="table-wrap"><table><thead><tr><th>NAME</th><th>PHONE</th><th>ORDERS</th><th>LATEST ORDER</th></tr></thead><tbody>${customers.map(customer=>`<tr><td>${escapeHtml(customer.customer)}</td><td>${escapeHtml(customer.phone || "—")}</td><td>${state.orders.filter(order=>order.phone && order.phone===customer.phone).length || 1}</td><td>${escapeHtml(customer.id)}</td></tr>`).join("")}</tbody></table></div></article>`;
+    return `<article class="panel table-panel"><div class="section-heading"><h2>Customers</h2><span class="eyebrow">${customers.length} saved records</span></div><div class="table-wrap"><table><thead><tr><th>NAME</th><th>PHONE</th><th>ORDERS</th><th>LATEST ORDER</th></tr></thead><tbody>${customers.map(customer=>`<tr><td>${escapeHtml(customer.customer)}</td><td>${escapeHtml(customer.phone || "—")}</td><td>${state.orders.filter(order=>order.phone && order.phone===customer.phone).length || 1}</td><td>${escapeHtml(customer.id)}</td></tr>`).join("")}</tbody></table></div></article>`;
   }
   if (title === "Members") {
     return `<article class="panel"><div class="team-toolbar"><div><h2 style="margin:0">Workers</h2><p class="eyebrow">Only owners and admins can manage the team</p></div><button class="primary-button" id="addWorkerButton">＋ Add worker</button></div><div class="table-wrap"><table><thead><tr><th>TEAM MEMBER</th><th>PHONE</th><th>ROLE</th><th>ACCESS</th><th>ACTION</th></tr></thead><tbody>
@@ -492,7 +492,7 @@ function genericPage(title) {
   if (title === "Reports") {
     const revenue = state.orders.reduce((sum, order) => sum + Number(order.amount || 0), 0);
     const paid = state.orders.filter(order => order.payment && order.payment !== "Unpaid").reduce((sum, order) => sum + Number(order.amount || 0), 0);
-    return `<div class="stats-grid">${statCard("Order value",formatUGX(revenue),"Saved demo orders","UGX")}${statCard("Recorded as paid",formatUGX(paid),"Payment method selected at intake","✓")}${statCard("Orders",String(state.orders.length),"All saved demo orders","▤")}</div><div class="role-notice">Demo figures only—not a financial ledger or connected payment statement.</div>`;
+    return `<div class="stats-grid">${statCard("Order value",formatUGX(revenue),"Saved orders","UGX")}${statCard("Recorded as paid",formatUGX(paid),"Payment method selected at intake","✓")}${statCard("Orders",String(state.orders.length),"All saved orders","▤")}</div><div class="role-notice">Figures reflect saved POS records. Connect financial statements and tax reporting before formal accounting use.</div>`;
   }
   if (title === "Settings") {
     return `<article class="panel"><h2>Business profile</h2><p>Namasuba, Entebbe Road, opposite Sip Lounge</p><p>0755 217 588 · 0795 311 913</p><p>Website: www.freshstep.ug</p><p>Payments: MTN MoMo, Airtel Money, Cash and Visa</p><p>Free pickup and delivery above UGX 50,000 within 5km.</p></article>`;
@@ -1095,10 +1095,10 @@ function sendBotMessage(text) {
   const messages = document.getElementById("botMessages");
   messages.insertAdjacentHTML("beforeend",`<div class="user-message">${escapeHtml(text)}</div>`);
   setTimeout(()=> {
-    let answer = "I’m a local demo assistant. Try asking about sales, orders, or inventory.";
+    let answer = "I’m FreshBot. Ask about sales, orders, or inventory.";
     if (/sales|revenue/i.test(text)) {
       answer = isManager()
-        ? `Saved demo order value: ${formatUGX(state.orders.reduce((sum, order) => sum + Number(order.amount || 0), 0))} across ${state.orders.length} orders.`
+        ? `Saved order value: ${formatUGX(state.orders.reduce((sum, order) => sum + Number(order.amount || 0), 0))} across ${state.orders.length} orders.`
         : "Sales and revenue are only visible to the owner and admin.";
     }
     if (/overdue|order/i.test(text)) {
