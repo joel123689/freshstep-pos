@@ -4,6 +4,8 @@ import os
 import secrets
 import sqlite3
 import urllib.request
+import zipfile
+import io
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -223,11 +225,18 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
         if path == "/download":
-            zip_path = ROOT.parent / "FreshStepPOS.zip"
-            if not zip_path.is_file():
-                self.send_error(404)
-                return
-            content = zip_path.read_bytes()
+            buffer = io.BytesIO()
+            with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+                for file_path in ROOT.iterdir():
+                    if not file_path.is_file():
+                        continue
+                    if file_path.name in {".env", "freshstep.db"} or file_path.suffix in {".pyc"}:
+                        continue
+                    if file_path.name.startswith("."):
+                        if file_path.name not in {".env.example", ".gitignore"}:
+                            continue
+                    archive.write(file_path, file_path.name)
+            content = buffer.getvalue()
             self.send_response(200)
             self.send_header("Content-Type", "application/zip")
             self.send_header("Content-Disposition", 'attachment; filename="FreshStepPOS.zip"')

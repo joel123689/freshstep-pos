@@ -162,6 +162,71 @@ const priceBook = {
 };
 const addonPrices = { softener: 2000, perfume: 2000, packaging: 3000, express: 10000 };
 let selectedPhotos = new WeakMap();
+const pendingMutationKey = "freshstep-pending-mutations";
+
+function loadPendingMutations() {
+  try {
+    const pending = JSON.parse(localStorage.getItem(pendingMutationKey) || "[]");
+    return Array.isArray(pending) ? pending : [];
+  } catch (error) {
+    console.warn("Could not read offline mutation queue.", error);
+    return [];
+  }
+}
+
+function savePendingMutations(pending) {
+  localStorage.setItem(pendingMutationKey, JSON.stringify(pending));
+  updateOfflineIndicator(pending.length);
+}
+
+function queueMutation(path, options = {}) {
+  const pending = loadPendingMutations();
+  pending.push({
+    path,
+    method: options.method || "POST",
+    body: options.body || "{}",
+    queuedAt: new Date().toISOString()
+  });
+  savePendingMutations(pending);
+  showToast("Saved offline. It will sync when online.");
+}
+
+async function flushPendingMutations() {
+  if (!navigator.onLine) return;
+  let pending = loadPendingMutations();
+  if (!pending.length) return;
+  const remaining = [];
+  for (const mutation of pending) {
+    try {
+      await apiRequest(mutation.path, { method: mutation.method, body: mutation.body });
+    } catch (error) {
+      remaining.push(mutation);
+      console.warn("Offline mutation is waiting for another sync.", error);
+    }
+  }
+  savePendingMutations(remaining);
+  if (!remaining.length) showToast("Offline changes synced");
+}
+
+function updateOfflineIndicator(pendingCount = loadPendingMutations().length) {
+  let indicator = document.getElementById("offlineIndicator");
+  if (!indicator) {
+    indicator = document.createElement("div");
+    indicator.id = "offlineIndicator";
+    indicator.className = "offline-indicator";
+    document.body.appendChild(indicator);
+  }
+  indicator.hidden = navigator.onLine && pendingCount === 0;
+  indicator.textContent = navigator.onLine
+    ? `${pendingCount} change${pendingCount === 1 ? "" : "s"} waiting to sync`
+    : `Offline mode${pendingCount ? ` · ${pendingCount} pending` : ""}`;
+}
+
+window.addEventListener("online", () => {
+  updateOfflineIndicator();
+  flushPendingMutations();
+});
+window.addEventListener("offline", () => updateOfflineIndicator());
 
 function calculateItemTotal(item) {
   const serviceId = item.querySelector('select[name="service"]').value;
@@ -807,7 +872,10 @@ document.getElementById("workerForm").addEventListener("submit", event => {
   apiRequest("/api/workers", {
     method: "POST",
     body: JSON.stringify({ name, phone, pin })
-  }).catch(error => showToast(error.message));
+  }).catch(error => {
+    if (!navigator.onLine) queueMutation("/api/workers", { method: "POST", body: JSON.stringify({ name, phone, pin }) });
+    else showToast(error.message);
+  });
   event.target.reset();
   document.getElementById("workerModal").classList.remove("open");
   updateWorkerOptions();
@@ -848,7 +916,10 @@ document.getElementById("inventoryForm").addEventListener("submit", event => {
   apiRequest("/api/inventory", {
     method: "POST",
     body: JSON.stringify(updated)
-  }).catch(error => showToast(error.message));
+  }).catch(error => {
+    if (!navigator.onLine) queueMutation("/api/inventory", { method: "POST", body: JSON.stringify(updated) });
+    else showToast(error.message);
+  });
   const modal = document.getElementById("inventoryModal");
   modal.classList.remove("open");
   modal.setAttribute("aria-hidden", "true");
@@ -876,7 +947,10 @@ function clockIn(workerName) {
     .then(result => {
       if (result.whatsapp && result.whatsapp.enabled) showToast("Arrival sent to configured WhatsApp recipients");
     })
-    .catch(error => console.warn("Server attendance sync failed.", error));
+    .catch(error => {
+      console.warn("Server attendance sync failed.", error);
+      if (!navigator.onLine) queueMutation("/api/attendance", { method: "POST", body: "{}" });
+    });
   state.currentWorker = workerName;
   state.role = "worker";
   state.page = "Dashboard";
@@ -1234,6 +1308,10 @@ async function syncOrderWithServer(order, method = "POST") {
     });
   } catch (error) {
     console.warn("Server order sync failed.", error);
+    queueMutation(method === "POST" ? "/api/orders" : `/api/orders/${encodeURIComponent(order.id)}`, {
+      method,
+      body: JSON.stringify(method === "POST" ? order : { status: order.status })
+    });
   }
 }
 
@@ -1245,6 +1323,11 @@ document.getElementById("workerSignOutButton").addEventListener("click", async (
   }
   state.role = "";
   restoreServerSession();
+  updateOfflineIndicator();
+  window.addEventListener("load", () => {
+    updateOfflineIndicator();
+    flushPendingMutations();
+  });
 });
 
 document.getElementById("changePinForm").addEventListener("submit", async event => {
