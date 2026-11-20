@@ -87,7 +87,7 @@ def init_db():
                     ("bags", "Protective garment bags", 12, "bags", 15),
                 ],
             )
-        temporary_worker_pin = hash_pin("Worker123!")
+        temporary_worker_pin = hash_pin("2055")
         db.execute(
             "UPDATE users SET pin_hash=? WHERE role='worker' AND (pin_hash IS NULL OR pin_hash='')",
             (temporary_worker_pin,),
@@ -335,8 +335,8 @@ class Handler(BaseHTTPRequestHandler):
                 return
             current_pin = str(data.get("currentPin", "")).strip()
             new_pin = str(data.get("newPin", "")).strip()
-            if len(new_pin) < 8:
-                self.send_json(400, {"error": "New PIN must contain at least 8 characters"})
+            if len(new_pin) < 4:
+                self.send_json(400, {"error": "New PIN must contain at least 4 characters"})
                 return
             with connect_db() as db:
                 user = db.execute("SELECT pin_hash FROM users WHERE name=? AND active=1", (session["name"],)).fetchone()
@@ -395,8 +395,8 @@ class Handler(BaseHTTPRequestHandler):
             name = str(data.get("name", "")).strip()
             phone = str(data.get("phone", "")).strip()
             pin = str(data.get("pin", "")).strip()
-            if not name or len(pin) < 8:
-                self.send_json(400, {"error": "Worker name and an 8-character PIN are required"})
+            if not name or len(pin) < 4:
+                self.send_json(400, {"error": "Worker name and a 4-character PIN are required"})
                 return
             with connect_db() as db:
                 db.execute(

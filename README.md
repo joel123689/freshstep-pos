@@ -13,7 +13,7 @@ python server.py
 
 Open `http://localhost:8080`.
 
-Default temporary worker PIN: `Worker123!`. Change it through a production account-management flow before real staff use.
+Default temporary worker PIN: `2055`. Change it through a production account-management flow before real staff use.
 
 ## Environment variables
 
